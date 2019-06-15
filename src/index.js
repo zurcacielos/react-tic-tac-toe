@@ -4,7 +4,9 @@ import './index.css';
 
 function Square(props) {
   return (
-    <button className="square" onClick={props.onClick}>
+    <button
+      className={`square ${props.highlighted ? 'highlighted' : ''}`}
+      onClick={props.onClick}>
       {props.value}
     </button>
   );
@@ -14,6 +16,7 @@ class Board extends React.Component {
   renderSquare(i) {
     return (
       <Square
+        highlighted={this.props.winningLine.indexOf(i)>=0 ? true : false}
         value={this.props.squares[i]}
         onClick={() => this.props.onClick(i)}
       />
@@ -48,6 +51,7 @@ class Game extends React.Component {
       stepNumber: 0,
       xIsNext: true,
       ascendingHistory: true,
+      winningLine: []
     };
   }
 
@@ -55,7 +59,8 @@ class Game extends React.Component {
     const history = this.state.history.slice(0, this.state.stepNumber + 1);
     const current = history[history.length - 1];
     const squares = current.squares.slice();
-    if (calculateWinner(squares) || squares[i]) {
+    const winner = calculateWinner(squares);
+    if ( winner.player || squares[i]) {
       return;
     }
     squares[i] = this.state.xIsNext ? "X" : "O";
@@ -107,8 +112,8 @@ class Game extends React.Component {
     });
 
     let status;
-    if (winner) {
-      status = "Winner: " + winner;
+    if (winner.player) {
+      status = "Winner: " + winner.player;
     } else {
       status = "Next player: " + (this.state.xIsNext ? "X" : "O");
     }
@@ -119,6 +124,7 @@ class Game extends React.Component {
           <Board
             squares={current.squares}
             onClick={i => this.handleClick(i)}
+            winningLine={winner.line}
           />
         </div>
         <div className="game-info">
@@ -151,8 +157,11 @@ function calculateWinner(squares) {
   for (let i = 0; i < lines.length; i++) {
     const [a, b, c] = lines[i];
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+      return {
+        player: squares[a],
+        line: lines[i],
+      };
     }
   }
-  return null;
+  return {player: null, line: []};
 }
